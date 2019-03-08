@@ -1,0 +1,84 @@
+{*
+Example for FRAM Click
+
+    Date          : jan 2018.
+    Author        : MikroE Team
+
+Test configuration TIVA :
+    
+    MCU              : TM4C129XNCZAD
+    Dev. Board       : EasyMx PRO v7 for TIVA ARM
+    ARM Compiler ver : v6.0.0.0
+
+---
+Description :
+
+The application is composed of three sections :
+
+- System Initialization - GPIO and SPI module Initalization 
+- Application Initialization -Fram Driver Initialization, initialization of click by setting mikorBUS pins to
+  approprieate logic level, performing erase all and write enable functions. 
+- Application Task - Writing data to click memory and displaying the read data via UART. 
+
+*}
+program Click_FRAM_TIVA;
+
+uses Click_FRAM_types, Click_FRAM_config;
+
+var
+    wrData : array[10] of char; 
+    rdData : array[10] of char; 
+    
+procedure systemInit(); 
+begin
+
+    mikrobus_gpioInit(_MIKROBUS1, _MIKROBUS_PWM_PIN, _GPIO_OUTPUT); 
+    mikrobus_gpioInit(_MIKROBUS1, _MIKROBUS_CS_PIN, _GPIO_OUTPUT); 
+    mikrobus_spiInit(_MIKROBUS1, @_FRAM_SPI_CFG[0]); 
+    mikrobus_logInit(_MIKROBUS2, 9600); 
+    Delay_ms(100); 
+
+end;
+
+procedure applicationInit(); 
+begin
+
+    fram_spiDriverInit(T_FRAM_P(@_MIKROBUS1_GPIO), T_FRAM_P(@_MIKROBUS1_SPI)); 
+     
+    fram_eraseAll(); 
+        
+
+end;
+
+procedure applicationTask(); 
+begin
+
+    mikrobus_logWrite('Writing MikroE to  Fram memory, from address 0x0150:', _LOG_LINE); 
+    fram_write(0x0150, @wrData[0], 9); 
+    mikrobus_logWrite('Reading 9 bytes of Fram memory, from address 0x0150:', _LOG_LINE); 
+    fram_read(0x0150, @rdData[0], 9); 
+    mikrobus_logWrite('Data read: ', _LOG_TEXT); 
+    mikrobus_logWrite(rdData, _LOG_LINE); 
+    Delay_ms(1000); 
+
+end;
+
+begin
+    wrData[0] := 'M';
+    wrData[1] := 'i';
+    wrData[2] := 'k';
+    wrData[3] := 'r';
+    wrData[4] := 'o';
+    wrData[5] := 'E';
+    wrData[6] := 13;
+    wrData[7] := 10;
+    wrData[8] := 0;
+
+    systemInit(); 
+    applicationInit(); 
+    while (1) do 
+    begin 
+        applicationTask(); 
+    end;
+
+end.
